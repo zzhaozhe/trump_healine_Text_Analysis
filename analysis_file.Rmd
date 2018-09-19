@@ -4,5 +4,15 @@ author: "Zhe Zhao"
 date: "9/19/2018"
 output: pdf_document
 ---
+```{r}
+###get data from newsapi 
+install.packages("jsonlite")
+library("jsonlite")
+data_file <- fromJSON("data.json", flatten = T)
+data_file <- data_file$articles
+```
+```{r}
+
+```
 
 
