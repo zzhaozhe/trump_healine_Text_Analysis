@@ -8,11 +8,62 @@ output: pdf_document
 ###get data from newsapi 
 install.packages("jsonlite")
 library("jsonlite")
-data_file <- fromJSON("data.json", flatten = T)
-data_file <- data_file$articles
+data_file <- fromJSON("data 2.json", flatten = T)
 ```
 ```{r}
+###clean up the text, eliminate special characters and repeats
+library(stringr)
+data_file$title <- str_replace_all(data_file$title, "[^[:alnum:]]", " ")
+titles <- data_file$title
+titles <- titles[!duplicated(titles)]
 
+library(wordcloud)
+library(tm)
+library(SnowballC)
+wordCorpus <- Corpus(VectorSource(titles))
+wordCorpus <- tm_map(wordCorpus, removeNumbers)
+wordCorpus <- tm_map(wordCorpus, stripWhitespace)
+wordCorpus <- tm_map(wordCorpus, removeWords, stopwords("en"))
+wordCorpus <- tm_map(wordCorpus, stemDocument) 
+
+wordcloud(wordCorpus, scale=c(5,0.5), max.words=50, random.order=FALSE, 
+          rot.per=0.35, use.r.layout=FALSE, colors = brewer.pal(16, "Dark2"))
 ```
+```{r}
+# Telling R that we have completed preprocessing, and to treat word-bag as text documents
+dtm <- DocumentTermMatrix(wordCorpus) 
+
+# create transpose of the DTM:
+tdm <- TermDocumentMatrix(wordCorpus)
+
+# Organize terms by their frequency:
+freq <- colSums(as.matrix(dtm))   
+ord <- order(freq)
+
+#  Start by removing sparse terms:   
+dtms <- removeSparseTerms(dtm, 0.1) # This makes a matrix that is 10% empty space, maximum.   
+
+# List most and least frequently occurring words.
+freq[head(ord)]  # least freq words
+freq["tail"(ord)] # most freq words
+```
+```{r}
+findAssocs(dtm, "trump", corlimit = 0.1)
+```
+```{r}
+findAssocs(dtm, "tweet", corlimit = 0.1)
+```
+```{r}
+findAssocs(dtm, "china", corlimit = 0.1)
+```
+```{r}
+# plot word association
+source("http://bioconductor.org/biocLite.R")
+    biocLite("Rgraphviz")
+xfrqdf = findFreqTerms(dtm)
+xfrqdf = findFreqTerms(dtm, lowfreq=7)
+plot(dtm, term = xfrqdf, corThreshold = 0.1, weighting = F, attrs=list(node=list(width=5,fontsize=15, fontcolor="blue", color="red")))
+```
+
 
 
